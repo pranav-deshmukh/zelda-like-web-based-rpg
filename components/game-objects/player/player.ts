@@ -1,5 +1,7 @@
 import { PLAYER_ANIMATION_KEYS } from "@/components/common/assets";
 import { Position } from "@/components/common/types";
+import { isArcadePhysicsBody } from "@/components/common/utils";
+import { ControlsComponent } from "@/components/game-object/controls-component";
 import { InputComponent } from "@/components/input/input-component";
 
 export type PlayerConfig = {
@@ -11,7 +13,7 @@ export type PlayerConfig = {
 }
 
 export class Player extends Phaser.Physics.Arcade.Sprite {
-    #controls: InputComponent;
+    #controlsComponent: ControlsComponent;
     constructor(config:PlayerConfig){
         const {scene, position, assetKey, frame} = config;
         const {x, y} = position;
@@ -21,7 +23,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
        scene.add.existing(this);
        scene.physics.add.existing(this);
 
-       this.#controls = config.controls;
+       this.#controlsComponent = new ControlsComponent(this, config.controls);
 
        this.play({key:PLAYER_ANIMATION_KEYS.IDLE_DOWN, repeat:-1});
 
@@ -32,19 +34,60 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     }
 
     update(): void {
-        if(this.#controls.isUpDown) {
-            this.play({key:PLAYER_ANIMATION_KEYS.IDLE_UP, repeat:-1}, true);
+        const controls = this.#controlsComponent.controls;
+        if(controls.isUpDown) {
+            this.play({key:PLAYER_ANIMATION_KEYS.WALK_UP, repeat:-1}, true);
+            this.#updateVelocity(false, -1);
         }
-        else if(this.#controls.isDownDown) {
+        else if(controls.isDownDown) {
+            this.play({key:PLAYER_ANIMATION_KEYS.WALK_DOWN, repeat:-1}, true);
+            this.#updateVelocity(false, 1);
+        }
+        else{
+            this.#updateVelocity(false, 0);
+        }
+
+        const isMovingVertically = controls.isUpDown || controls.isDownDown;
+        if(controls.isLeftDown) {
+            this.setFlipX(true);
+            this.#updateVelocity(true, -1);
+            if(!isMovingVertically) {
+                this.play({key:PLAYER_ANIMATION_KEYS.WALK_SIDE, repeat:-1}, true);
+            }
+        }
+        else if(controls.isRightDown) {
+            this.setFlipX(false);
+            this.#updateVelocity(true, 1);
+            if(!isMovingVertically) {
+                this.play({key:PLAYER_ANIMATION_KEYS.WALK_SIDE, repeat:-1}, true);
+            }
+        }
+        else{
+            this.#updateVelocity(true, 0);
+        }
+
+        if(!controls.isLeftDown && !controls.isRightDown && !controls.isUpDown && !controls.isDownDown) {
             this.play({key:PLAYER_ANIMATION_KEYS.IDLE_DOWN, repeat:-1}, true);
         }
-        else if(this.#controls.isLeftDown) {
-            this.setFlipX(true);
-            this.play({key:PLAYER_ANIMATION_KEYS.IDLE_SIDE, repeat:-1}, true);
+
+        this.#normalizeVelocity();
+    }
+
+    #updateVelocity(isX:boolean, value:number):void {
+        if(!isArcadePhysicsBody(this.body)) {
+            return;
         }
-        else if(this.#controls.isRightDown) {
-            this.setFlipX(false);
-            this.play({key:PLAYER_ANIMATION_KEYS.IDLE_SIDE, repeat:-1}, true);
+        if(isX) {
+            this.body.velocity.x = value;
+            return;
         }
+        this.body.velocity.y = value;
+    }
+
+    #normalizeVelocity():void {
+        if(!isArcadePhysicsBody(this.body)) {
+            return;
+        }
+        this.body.velocity.normalize().scale(80);
     }
 }

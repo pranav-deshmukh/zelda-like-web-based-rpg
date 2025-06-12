@@ -13,6 +13,10 @@ export class BaseGameObjectComponent {
         return gameObject[`_${this.name}`] as T;
     }
 
+    static removeComponent<T>(gameObject: GameObject):void{
+        delete gameObject[`_${this.name}`];
+    }
+
     protected assignComponentToObject(object:GameObject):void{
         object[`_${this.constructor.name}`] = this;
     }
