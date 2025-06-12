@@ -1,14 +1,21 @@
-import { GameObject } from "../common/types";
+import { DIRECTION } from "../common/common";
+import { Direction, GameObject } from "../common/types";
 import { BaseGameObjectComponent } from "./base-game-object-component";
 
-export class SpeedComponent extends BaseGameObjectComponent{
-    #speed:number; 
-    constructor(gameObject:GameObject, speed:number) {
+export class DirectionComponent extends BaseGameObjectComponent{
+    #direction:Direction;
+    #callback: (direction:Direction) => void;
+    constructor(gameObject:GameObject, onDirectionCallback= () => undefined) {
         super(gameObject);
-        this.#speed = speed;
+        this.#direction = DIRECTION.DOWN;
+        this.#callback = onDirectionCallback;
     }
 
-    get speed():number{
-        return this.#speed;
+    get direction():Direction {
+        return this.#direction;
+    }
+    set direction(direction:Direction) {
+        this.#direction = direction;
+        this.#callback(this.#direction);
     }
 }
