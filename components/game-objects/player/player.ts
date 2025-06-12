@@ -3,6 +3,9 @@ import { Position } from "@/components/common/types";
 import { isArcadePhysicsBody } from "@/components/common/utils";
 import { ControlsComponent } from "@/components/game-object/controls-component";
 import { InputComponent } from "@/components/input/input-component";
+import { StateMachine } from "@/components/state-machine/state-machine";
+import { CHARACTER_STATES } from "@/components/state-machine/states/character/character-states";
+import { IdleState } from "@/components/state-machine/states/character/idle-state";
 
 export type PlayerConfig = {
     scene: Phaser.Scene;
@@ -14,6 +17,8 @@ export type PlayerConfig = {
 
 export class Player extends Phaser.Physics.Arcade.Sprite {
     #controlsComponent: ControlsComponent;
+    #stateMachine:StateMachine
+
     constructor(config:PlayerConfig){
         const {scene, position, assetKey, frame} = config;
         const {x, y} = position;
@@ -26,6 +31,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
        this.#controlsComponent = new ControlsComponent(this, config.controls);
 
        this.play({key:PLAYER_ANIMATION_KEYS.IDLE_DOWN, repeat:-1});
+
+       this.#stateMachine = new StateMachine('player');
+       this.#stateMachine.addState(new IdleState(this));
+       this.#stateMachine.setState(CHARACTER_STATES.IDLE_STATE);
 
        config.scene.events.on(Phaser.Scenes.Events.UPDATE, this.update, this);
        config.scene.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
