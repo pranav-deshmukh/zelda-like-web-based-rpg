@@ -18,4 +18,9 @@ export class DirectionComponent extends BaseGameObjectComponent{
         this.#direction = direction;
         this.#callback(this.#direction);
     }
+
+    set callback(callback:(direction:Direction) => void){
+        this.#callback = callback;
+        
+    }
 }
